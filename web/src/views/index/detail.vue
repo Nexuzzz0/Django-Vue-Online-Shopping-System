@@ -8,7 +8,7 @@
           <div class="thing-infos-view">
             <div class="thing-infos">
               <div class="thing-img-box">
-                <img :src="detailData.cover"/>
+                <img :src="detailData.cover" class="detail-cover" alt="cover" v-img-fallback/>
               </div>
               <div class="thing-info-box">
                 <div class="thing-state">
@@ -146,7 +146,7 @@
             <div class="things">
               <div class="thing-item thing-item" v-for="item in recommendData" @click="handleDetail(item)">
                 <div class="img-view">
-                  <img :src="item.cover"></div>
+                  <img :src="item.cover" class="thing-cover" alt="cover" v-img-fallback></div>
                 <div class="info-view">
                   <h3 class="thing-name">{{ item.title.substring(0, 12)}}</h3>
                   <span>
@@ -184,7 +184,7 @@ export default {
   data () {
     return {
       thingId: '',
-      detailData: undefined,
+      detailData: {},
       tabUnderLeft: 6,
       tabData: ['简介', '评论'],
       selectTabIndex: 0,
@@ -209,7 +209,7 @@ export default {
     getThingDetail () {
       detailApi({id: this.thingId}).then(res => {
         this.detailData = res.data
-        this.detailData.cover = this.$BASE_URL + this.detailData.cover
+        this.detailData.cover = this.$img(this.detailData.cover)
       }).catch(err => {
         this.$message.error('获取详情失败')
       })
@@ -219,7 +219,7 @@ export default {
       if (username) {
         addWishUserApi({thingId: this.thingId, username: username}).then(res => {
           this.detailData = res.data
-          this.detailData.cover = this.$BASE_URL + this.detailData.cover
+          this.detailData.cover = this.$img(this.detailData.cover)
           this.$message.success('加入成功')
         }).catch(err => {
           console.log('操作失败')
@@ -234,7 +234,7 @@ export default {
         addCollectUserApi({thingId: this.thingId, username: username}).then(res => {
           this.$message.success('收藏成功')
           this.detailData = res.data
-          this.detailData.cover = this.$BASE_URL + this.detailData.cover
+          this.detailData.cover = this.$img(this.detailData.cover)
         }).catch(err => {
           console.log('收藏失败')
         })
@@ -275,9 +275,7 @@ export default {
     getRecommendThing () {
       listThingList({sort: 'recommend'}).then(res => {
         res.data.forEach((item, index) => {
-          if (item.cover) {
-            item.cover = this.$BASE_URL + item.cover
-          }
+          item.cover = this.$img(item.cover)
         })
         console.log(res)
         this.recommendData = res.data.slice(0, 6)
@@ -416,13 +414,14 @@ export default {
     flex: 0 0 235px;
     margin: 0 40px 0 0;
 
-    img {
-      width: 200px;
+    .detail-cover {
+      width: 235px;
       height: 186px;
       display: block;
-      margin: 0 auto;
-      //border: 1px solid #eee;
-      //border-radius: 4px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: #f2f4f7;
+      border: 1px solid rgba(17, 24, 39, 0.06);
     }
   }
 
@@ -675,7 +674,7 @@ export default {
   }
 
   .things {
-    border-top: 1px solid #cedce4;
+    border-top: 1px solid rgba(17, 24, 39, 0.06);
 
     .thing-item {
       min-width: 255px;
@@ -687,33 +686,43 @@ export default {
       overflow: hidden;
       margin-top: 26px;
       margin-bottom: 36px;
-      padding-bottom: 24px;
-      border-bottom: 1px #e1e1e1 solid;
       cursor: pointer;
+      background: #fff;
+      border: 1px solid rgba(17, 24, 39, 0.06);
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(17, 24, 39, 0.06);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px rgba(17, 24, 39, 0.10);
+      }
 
       .img-view {
         //background: #f3f3f3;
         //text-align: center;
-        height: 200px;
+        height: 140px;
         width: 255px;
-        //border: 1px #f3f3f3 solid;
+        overflow: hidden;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
 
-        img {
-          height: 200px;
-          width: 186px;
-          overflow: hidden;
-          margin: 0 auto;
-          background-size: contain;
+        .thing-cover {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+          background: #f2f4f7;
         }
       }
 
       .info-view {
         //background: #f6f9fb;
         overflow: hidden;
-        padding: 0 16px;
+        padding: 10px 14px 14px;
         .thing-name {
           line-height: 32px;
-          margin-top: 12px;
+          margin-top: 0;
           color: #0F1111!important;
           font-size: 15px!important;
           font-weight: 400!important;

@@ -9,7 +9,7 @@
           <div class="thing-item item-column-3" v-for="(item,index) in wishData" :key="index">
             <div class="remove" @click="handleRemove(item)">移出</div>
             <div class="img-view" @click="handleClickItem(item)">
-              <img :src="item.cover">
+              <img :src="item.cover" class="thing-cover" alt="cover" v-img-fallback>
             </div>
             <div class="info-view">
               <h3 class="thing-name">{{item.title}}</h3>
@@ -54,7 +54,7 @@ export default {
       let username = this.$store.state.user.username
       getWishThingListApi({username: username}).then(res => {
         res.data.forEach(item => {
-          item.cover = this.$BASE_URL + item.cover
+          item.cover = this.$img(item.cover)
         })
         this.wishData = res.data
       }).catch(err => {

@@ -35,7 +35,7 @@
         <div class="content flex-view">
           <div class="left-list">
             <div class="list-item flex-view">
-              <img :src="item.cover" class="thing-img">
+              <img :src="item.cover" class="thing-img" v-img-fallback>
               <div class="detail flex-between flex-view">
                 <div class="flex-between flex-top flex-view">
                   <h2 class="name">{{item.title}}</h2>
@@ -115,9 +115,7 @@ export default {
       let userId = this.$store.state.user.userId
       listApi({userId: userId, orderStatus: this.orderStatus}).then(res => {
         res.data.forEach((item, index) => {
-          if (item.cover) {
-            item.cover = this.$BASE_URL + item.cover
-          }
+          item.cover = this.$img(item.cover)
         })
         this.orderData = res.data
         this.loading = false

@@ -137,8 +137,9 @@ export default {
   height: 56px;
   width: 100%;
   background: #fff;
-  border-bottom: 1px solid #cedce4;
-  padding-left: 48px;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+  box-shadow: 0 2px 10px rgba(17, 24, 39, 0.06);
+  padding: 0 24px;
   z-index: 16;
   display: flex;
   flex-direction: row;

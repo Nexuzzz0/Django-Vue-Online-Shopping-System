@@ -27,7 +27,7 @@ def list_api(request):
             order = 'wish_count'
 
         if keyword:
-            things = Thing.objects.filter(title__contains=keyword).order_by(order)
+            things = Thing.objects.filter(status='0', title__contains=keyword).order_by(order)
         elif c and int(c) > -1:
             ids = [c]
             classifications = Classification.objects.filter(pid=c)
@@ -38,14 +38,14 @@ def list_api(request):
                 ids.append(item['id'])
             print(ids)
 
-            things = Thing.objects.filter(classification_id__in=ids).order_by(order)
+            things = Thing.objects.filter(status='0', classification_id__in=ids).order_by(order)
 
         elif tag:
             tag = Tag.objects.get(id=tag)
             print(tag)
-            things = tag.thing_set.all().order_by(order)
+            things = tag.thing_set.filter(status='0').order_by(order)
         else:
-            things = Thing.objects.all().defer('wish').order_by(order)
+            things = Thing.objects.filter(status='0').defer('wish').order_by(order)
 
         serializer = ListThingSerializer(things, many=True)
         return APIResponse(code=0, msg='查询成功', data=serializer.data)

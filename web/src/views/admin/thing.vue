@@ -116,9 +116,7 @@ export default {
         this.loading = false
         res.data.forEach((item, index) => {
           item.index = index + 1
-          if (item.cover) {
-            item.cover = this.$BASE_URL + item.cover
-          }
+          item.cover = this.$img(item.cover)
         })
         this.data = res.data
         console.log(res)

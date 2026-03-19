@@ -7,6 +7,9 @@ version = "0.1.0"
 
 [tasks]
 run = "python manage.py runserver 0.0.0.0:9003"
+seed_demo = "python manage.py seed_demo"
+seed_demo_remote = "python manage.py seed_demo --remote-images"
+seed_demo_remote_force = "python manage.py seed_demo --remote-images --force-remote-images"
 
 [dependencies]
 python = "3.12.*"

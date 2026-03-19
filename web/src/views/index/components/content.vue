@@ -14,6 +14,30 @@
       </div>
     </div>
     <div class="content-right">
+      <div class="hero" v-if="bannerData.length || adData.length">
+        <div class="hero-left" v-if="bannerData.length">
+          <a-carousel autoplay :dots="false">
+            <div
+              v-for="banner in bannerData"
+              :key="banner.id"
+              class="banner-slide"
+              @click="handleBannerClick(banner)"
+            >
+              <img :src="banner.image" class="banner-img" alt="banner" v-img-fallback>
+            </div>
+          </a-carousel>
+        </div>
+        <div class="hero-right" v-if="adData.length">
+          <div
+            class="ad-card"
+            v-for="ad in adData"
+            :key="ad.id"
+            @click="handleAdClick(ad)"
+          >
+            <img :src="ad.image" class="ad-img" alt="ad" v-img-fallback>
+          </div>
+        </div>
+      </div>
       <div class="top-select-view flex-view">
         <div class="order-view">
           <span class="title"></span>
@@ -31,7 +55,7 @@
         <div class="pc-thing-list flex-view">
           <div v-for="item in pageData" :key="item.id" @click="handleDetail(item)" class="thing-item item-column-3"><!---->
             <div class="img-view">
-              <img :src="item.cover"></div>
+              <img :src="item.cover" class="thing-cover" alt="cover" v-img-fallback></div>
             <div class="info-view">
               <h3 class="thing-name">{{ item.title.substring(0, 12)}}</h3>
               <span>
@@ -57,6 +81,8 @@
 import {listApi as listClassificationList} from '@/api/index/classification'
 import {listApi as listTagList} from '@/api/index/tag'
 import {listApi as listThingList} from '@/api/index/thing'
+import {listApi as listBannerList} from '@/api/index/banner'
+import {listApi as listAdList} from '@/api/index/ad'
 
 export default {
   name: 'Content',
@@ -73,6 +99,9 @@ export default {
       selectTabIndex: 0,
       tabUnderLeft: 12,
 
+      bannerData: [],
+      adData: [],
+
       thingData: [],
       pageData: [],
 
@@ -83,9 +112,47 @@ export default {
   },
   mounted () {
     this.initSider()
+    this.initHero()
     this.getThingList({})
   },
   methods: {
+    initHero () {
+      listBannerList().then(res => {
+        const raw = Array.isArray(res.data) ? res.data : []
+        this.bannerData = raw
+          .filter(item => item && item.image)
+          .slice(0, 5)
+          .map(item => ({
+            ...item,
+            image: this.$img(item.image)
+          }))
+      }).catch(() => {
+        this.bannerData = []
+      })
+
+      listAdList().then(res => {
+        const raw = Array.isArray(res.data) ? res.data : []
+        this.adData = raw
+          .filter(item => item && item.image)
+          .slice(0, 2)
+          .map(item => ({
+            ...item,
+            image: this.$img(item.image)
+          }))
+      }).catch(() => {
+        this.adData = []
+      })
+    },
+    handleBannerClick (banner) {
+      if (banner && banner.thing) {
+        this.handleDetail({ id: banner.thing })
+      }
+    },
+    handleAdClick (ad) {
+      if (ad && ad.link) {
+        window.open(ad.link, '_blank')
+      }
+    },
     initSider () {
       listClassificationList().then(res => {
         this.cData = res.data
@@ -154,9 +221,7 @@ export default {
       listThingList(data).then(res => {
         this.loading = false
         res.data.forEach((item, index) => {
-          if (item.cover) {
-            item.cover = this.$BASE_URL + item.cover
-          }
+          item.cover = this.$img(item.cover)
         })
         console.log(res)
         this.thingData = res.data
@@ -176,20 +241,25 @@ export default {
 .content {
   display: flex;
   flex-direction: row;
-  width: 1100px;
-  margin: 80px auto;
+  max-width: 1100px;
+  width: calc(100% - 32px);
+  margin: 72px auto 40px;
+  gap: 32px;
 }
 
 .content-left {
   width: 220px;
-  margin-right: 32px;
+  flex: 0 0 220px;
 }
 
 .left-search-item {
   overflow: hidden;
-  border-bottom: 1px solid #cedce4;
-  margin-top: 24px;
-  padding-bottom: 24px;
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.06);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(17, 24, 39, 0.06);
+  margin-top: 16px;
+  padding: 16px;
 }
 
 h4 {
@@ -198,6 +268,7 @@ h4 {
   font-size: 16px;
   line-height: 24px;
   height: 24px;
+  margin: 0 0 8px;
 }
 
 .category-item {
@@ -323,6 +394,7 @@ li {
   -webkit-box-flex: 1;
   -ms-flex: 1;
   flex: 1;
+  min-width: 0;
   padding-top: 12px;
 
   .pc-search-view {
@@ -458,42 +530,118 @@ li {
 
   }
 
+  .hero {
+    display: flex;
+    gap: 16px;
+    margin: 12px 0 18px;
+  }
+
+  .hero-left {
+    flex: 1;
+    min-width: 0;
+    height: 180px;
+    background: #fff;
+    border: 1px solid rgba(17, 24, 39, 0.06);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(17, 24, 39, 0.06);
+  }
+
+  .hero-left /deep/ .slick-slider,
+  .hero-left /deep/ .slick-list,
+  .hero-left /deep/ .slick-track,
+  .hero-left /deep/ .slick-slide,
+  .hero-left /deep/ .slick-slide > div {
+    height: 180px;
+  }
+
+  .banner-slide {
+    height: 180px;
+    cursor: pointer;
+  }
+
+  .banner-img {
+    width: 100%;
+    height: 180px;
+    display: block;
+    object-fit: cover;
+    background: #f2f4f7;
+  }
+
+  .hero-right {
+    width: 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .ad-card {
+    background: #fff;
+    border: 1px solid rgba(17, 24, 39, 0.06);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(17, 24, 39, 0.06);
+    cursor: pointer;
+  }
+
+  .ad-img {
+    width: 100%;
+    height: 86px;
+    display: block;
+    object-fit: cover;
+    background: #f2f4f7;
+  }
+
   .pc-thing-list {
     -ms-flex-wrap: wrap;
     flex-wrap: wrap;
+    gap: 20px;
+    justify-content: flex-start;
 
     .thing-item {
-      min-width: 255px;
-      max-width: 255px;
+      width: 255px;
       position: relative;
-      flex: 1;
-      margin-right: 20px;
+      flex: 0 0 255px;
       height: fit-content;
       overflow: hidden;
       margin-top: 26px;
       margin-bottom: 36px;
       cursor: pointer;
+      background: #fff;
+      border: 1px solid rgba(17, 24, 39, 0.06);
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(17, 24, 39, 0.06);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px rgba(17, 24, 39, 0.10);
+      }
 
       .img-view {
         //text-align: center;
-        height: 200px;
+        height: 180px;
         width: 255px;
+        overflow: hidden;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
 
-        img {
-          height: 200px;
-          width: 186px;
-          margin: 0 auto;
-          background-size: contain;
+        .thing-cover {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+          background: #f2f4f7;
         }
       }
 
       .info-view {
         //background: #f6f9fb;
         overflow: hidden;
-        padding: 0 16px;
+        padding: 12px 16px 16px;
         .thing-name {
           line-height: 32px;
-          margin-top: 12px;
+          margin-top: 0;
           color: #0F1111!important;
           font-size: 15px!important;
           font-weight: 400!important;
@@ -538,6 +686,44 @@ li {
     width: 100%;
     text-align: center;
     margin-top: 48px;
+  }
+}
+
+@media (max-width: 980px) {
+  .content {
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 72px;
+  }
+
+  .content-left {
+    width: 100%;
+    flex: none;
+  }
+
+  .content-right {
+    padding-top: 0;
+
+    .hero {
+      flex-direction: column;
+    }
+
+    .hero-right {
+      width: 100%;
+      flex-direction: row;
+    }
+
+    .ad-card {
+      flex: 1;
+    }
+  }
+}
+
+@media (max-width: 560px) {
+  .content-right {
+    .hero-right {
+      flex-direction: column;
+    }
   }
 }
 

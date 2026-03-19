@@ -15,7 +15,7 @@
         <div class="things flex-view">
             <div class="thing-item item-column-4" v-for="item in pageData" @click="handleDetail(item)">
               <div class="img-view">
-                <img :src="item.cover"></div>
+                <img :src="item.cover" class="thing-cover" alt="cover" v-img-fallback></div>
               <div class="info-view">
                 <h3 class="thing-name">{{ item.title.substring(0, 12)}}</h3>
                 <span>
@@ -82,9 +82,7 @@ export default {
       this.loading = true
       listThingList(data).then(res => {
         res.data.forEach((item, index) => {
-          if (item.cover) {
-            item.cover = this.$BASE_URL + item.cover
-          }
+          item.cover = this.$img(item.cover)
         })
         this.thingData = res.data
         this.total = this.thingData.length
@@ -161,27 +159,41 @@ export default {
   margin-top: 26px;
   margin-bottom: 36px;
   cursor: pointer;
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.06);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(17, 24, 39, 0.06);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(17, 24, 39, 0.10);
+  }
 
   .img-view {
     //text-align: center;
-    height: 200px;
+    height: 180px;
     width: 255px;
+    overflow: hidden;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
 
-    img {
-      height: 200px;
-      width: 186px;
-      margin: 0 auto;
-      background-size: contain;
+    .thing-cover {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      background: #f2f4f7;
     }
   }
 
   .info-view {
     //background: #f6f9fb;
     overflow: hidden;
-    padding: 0 16px;
+    padding: 12px 16px 16px;
     .thing-name {
       line-height: 32px;
-      margin-top: 12px;
+      margin-top: 0;
       color: #0F1111!important;
       font-size: 15px!important;
       font-weight: 400!important;

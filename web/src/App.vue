@@ -20,10 +20,11 @@ export default {
 </script>
 
 <style>
-
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   height: 100vh;
-  overflow: scroll;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #f5f7fa;
 }
 </style>

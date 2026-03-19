@@ -23,5 +23,7 @@ export default {
 }
 </script>
 <style scoped lang="less">
-
+.portal {
+  min-height: 100vh;
+}
 </style>
