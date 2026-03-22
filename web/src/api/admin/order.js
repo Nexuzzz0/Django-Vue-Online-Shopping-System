@@ -9,7 +9,8 @@ const api = {
   cancelOrderApi: '/myapp/admin/order/cancel_order',
   deleteApi: '/myapp/admin/order/delete',
   updateApi: '/myapp/admin/order/update',
-  delayApi: '/myapp/admin/order/delay'
+  delayApi: '/myapp/admin/order/delay',
+  shipApi: '/myapp/admin/order/ship'
 }
 
 /**
@@ -86,5 +87,16 @@ export const delayApi = function (params, data) {
     },
     params: params,
     data: data
+  })
+}
+
+export const shipApi = function (params) {
+  return axios({
+    url: api.shipApi,
+    method: 'post',
+    headers: {
+      'Content-Type': 'multipart/form-data;charset=utf-8'
+    },
+    params: params
   })
 }

@@ -16,7 +16,18 @@ def list_api(request):
         userId = request.GET.get('userId', -1)
         orderStatus = request.GET.get('orderStatus', '')
 
-        orders = Order.objects.all().filter(user=userId).filter(status__contains=orderStatus).order_by('-order_time')
+        orders = Order.objects.all().filter(user=userId)
+        if orderStatus:
+            if orderStatus == 'paid':
+                orders = orders.filter(status__in=['2', '3', '4'])
+            elif orderStatus == 'unpaid':
+                orders = orders.filter(status='1')
+            elif orderStatus == 'canceled':
+                orders = orders.filter(status='7')
+            else:
+                orders = orders.filter(status__contains=orderStatus)
+
+        orders = orders.order_by('-order_time')
         serializer = OrderSerializer(orders, many=True)
         return APIResponse(code=0, msg='查询成功', data=serializer.data)
 
@@ -38,7 +49,7 @@ def create(request):
     create_time = datetime.datetime.now()
     data['create_time'] = create_time
     data['order_number'] = str(utils.get_timestamp())
-    data['status'] = '2'
+    data['status'] = '1'
     serializer = OrderSerializer(data=data)
     if serializer.is_valid():
         serializer.save()
@@ -99,7 +110,8 @@ def confirm(request):
         return APIResponse(code=1, msg='对象不存在')
 
     data = {
-        'status': 2
+        'status': '2',
+        'pay_time': datetime.datetime.now(),
     }
     serializer = OrderSerializer(order, data=data)
     if serializer.is_valid():
@@ -115,6 +127,31 @@ def confirm(request):
         # order.user.save()
 
         return APIResponse(code=0, msg='付款成功', data=serializer.data)
+    else:
+        print(serializer.errors)
+        return APIResponse(code=1, msg='更新失败')
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthtication])
+def complete(request):
+    """确认收货：已发货(3) -> 已完成(4)"""
+    try:
+        pk = request.GET.get('id', -1)
+        order = Order.objects.get(pk=pk)
+    except Order.DoesNotExist:
+        return APIResponse(code=1, msg='对象不存在')
+
+    if str(order.status) != '3':
+        return APIResponse(code=1, msg='当前状态不可确认收货')
+
+    data = {
+        'status': '4'
+    }
+    serializer = OrderSerializer(order, data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return APIResponse(code=0, msg='确认收货成功', data=serializer.data)
     else:
         print(serializer.errors)
         return APIResponse(code=1, msg='更新失败')

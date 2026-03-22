@@ -32,6 +32,10 @@
                   <img src="@/assets/images/add.svg" />
                   <span>立即购买</span>
                 </button>
+                <button class="buy-btn buy-btn-secondary" @click="addToCart(detailData)">
+                  <img src="@/assets/images/cart-icon.svg" />
+                  <span>加入购物车</span>
+                </button>
               </div>
             </div>
             <div class="thing-counts hidden-sm">
@@ -148,7 +152,9 @@
                 <div class="img-view">
                   <img :src="item.cover" class="thing-cover" alt="cover" v-img-fallback></div>
                 <div class="info-view">
-                  <h3 class="thing-name">{{ item.title.substring(0, 12)}}</h3>
+                  <a-tooltip :title="item.title" placement="topLeft">
+                    <h3 class="thing-name">{{ item.title }}</h3>
+                  </a-tooltip>
                   <span>
                     <span class="a-price-symbol">¥</span>
                     <span class="a-price">{{item.price}}</span>
@@ -175,6 +181,7 @@ import {
 } from '@/api/index/thing'
 import {listApi as listCommentListApi, createApi as createCommentApi, likeApi} from '@/api/index/comment'
 import {createApi} from '@/api/index/order'
+import { addItem } from '@/utils/cart'
 
 export default {
   components: {
@@ -201,6 +208,16 @@ export default {
     this.getCommentList()
   },
   methods: {
+    addToCart (detailData) {
+      addItem({
+        id: detailData.id,
+        title: detailData.title,
+        price: detailData.price,
+        cover: detailData.cover,
+        classification_title: detailData.classification_title
+      }, 1)
+      this.$message.success('已加入购物车')
+    },
     selectTab (index) {
       this.selectTabIndex = index
       console.log(this.selectTabIndex)
@@ -575,6 +592,12 @@ export default {
   outline: none;
   border: none;
   margin-top: 18px;
+}
+
+.buy-btn-secondary {
+  background: #fff;
+  color: #4684e2;
+  border: 1px solid #4684e2;
 }
 
 .buy-btn img {

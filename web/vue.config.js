@@ -15,6 +15,11 @@ const assetsCDN = {
 const vueConfig = {
   runtimeCompiler: true,
   publicPath: './',
+  devServer: {
+    client: {
+      overlay: false
+    }
+  },
   configureWebpack: {
     // webpack plugins
     plugins: [

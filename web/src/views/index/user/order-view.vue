@@ -8,6 +8,10 @@
       </a-tab-pane>
       <a-tab-pane key="3" tab="已支付">
       </a-tab-pane>
+      <a-tab-pane key="4" tab="待收货">
+      </a-tab-pane>
+      <a-tab-pane key="5" tab="已完成">
+      </a-tab-pane>
     </a-tabs>
     <div class="list-content">
       <div class="order-item-view" v-for="(item, index) in orderData" :key="index">
@@ -28,8 +32,25 @@
             >
               <a-button type="primary" size="small" style="margin-right: 24px;">取消</a-button>
             </a-popconfirm>
+            <a-button
+              v-if="item.status==='1'"
+              size="small"
+              style="margin-right: 12px;"
+              @click="handlePay(item)"
+            >去支付</a-button>
+
+            <a-popconfirm
+              v-if="item.status==='3'"
+              title="确认已收到货？"
+              ok-text="是"
+              cancel-text="否"
+              @confirm="handleComplete(item)"
+            >
+              <a-button type="primary" size="small" style="margin-right: 12px;">确认收货</a-button>
+            </a-popconfirm>
+            <span class="pay-method" v-if="item.pay_method">{{ item.pay_method }}</span>
             <span class="text">订单状态</span>
-            <span class="state">{{item.status==='1'? '待支付': item.status === '2'? '已支付':'已取消'}}</span>
+            <span class="state">{{ statusText(item.status) }}</span>
           </div>
         </div>
         <div class="content flex-view">
@@ -84,6 +105,7 @@
 <script>
 import {listApi} from '@/api/index/order'
 import {cancelOrderApi} from '@/api/index/order'
+import {completeOrderApi} from '@/api/index/order'
 
 export default {
   name: 'OrderView',
@@ -97,16 +119,40 @@ export default {
     this.getOrderList()
   },
   methods: {
+    statusText (s) {
+      const v = String(s)
+      if (v === '1') return '待支付'
+      if (v === '2') return '待发货'
+      if (v === '3') return '待收货'
+      if (v === '4') return '已完成'
+      if (v === '7') return '已取消'
+      return '未知'
+    },
+    loadPayMethodMap () {
+      try {
+        const raw = localStorage.getItem('demo_shop_pay_method_map_v1') || '{}'
+        const parsed = JSON.parse(raw)
+        return parsed && typeof parsed === 'object' ? parsed : {}
+      } catch (e) {
+        return {}
+      }
+    },
     onTabChange (key) {
       console.log(key)
       if (key === '1') {
         this.orderStatus = ''
       }
       if (key === '2') {
-        this.orderStatus = '1'
+        this.orderStatus = 'unpaid'
       }
       if (key === '3') {
-        this.orderStatus = '2'
+        this.orderStatus = 'paid'
+      }
+      if (key === '4') {
+        this.orderStatus = '3'
+      }
+      if (key === '5') {
+        this.orderStatus = '4'
       }
       this.getOrderList()
     },
@@ -114,8 +160,12 @@ export default {
       this.loading = true
       let userId = this.$store.state.user.userId
       listApi({userId: userId, orderStatus: this.orderStatus}).then(res => {
+        const payMap = this.loadPayMethodMap()
         res.data.forEach((item, index) => {
           item.cover = this.$img(item.cover)
+          const v = payMap[String(item.id)]
+          if (v === 'ali') item.pay_method = '支付宝'
+          else if (v === 'wx') item.pay_method = '微信'
         })
         this.orderData = res.data
         this.loading = false
@@ -137,6 +187,17 @@ export default {
         this.getOrderList()
       }).catch(err => {
         this.$message.error(err.msg || '取消失败')
+      })
+    },
+    handlePay (item) {
+      this.$router.push({ name: 'pay', query: { amount: Number(item.price || 0) * Number(item.count || 0), orderIds: String(item.id) } })
+    },
+    handleComplete (item) {
+      completeOrderApi({ id: item.id }).then(() => {
+        this.$message.success('确认收货成功')
+        this.getOrderList()
+      }).catch(err => {
+        this.$message.error(err.msg || '确认收货失败')
       })
     }
   }
@@ -205,6 +266,18 @@ export default {
       color: #ff7b31;
       font-weight: 600;
       margin-left: 10px;
+    }
+
+    .pay-method {
+      display: inline-block;
+      padding: 0 8px;
+      height: 22px;
+      line-height: 22px;
+      border-radius: 11px;
+      background: #eef5ff;
+      color: #4684e2;
+      font-size: 12px;
+      margin-right: 12px;
     }
   }
 

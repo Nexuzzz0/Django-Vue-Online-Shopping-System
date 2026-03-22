@@ -14,22 +14,32 @@
           <span class="line-6">操作</span>
         </div>
         <div class="list">
-          <div class="items flex-view">
+          <div class="items flex-view" v-if="!fromCart">
             <div class="book flex-view">
-              <img :src="cover">
+              <img :src="$img(cover)">
               <h2>{{title}}</h2>
             </div>
             <div class="pay">¥{{price}}</div>
             <a-input-number v-model="count" :min="1" :max="10" @change="onCountChange"/>
             <img src="@/assets/images/delete-icon.svg" class="delete">
           </div>
+          <template v-else>
+            <div class="items flex-view" v-for="item in cartItems" :key="item.id">
+              <div class="book flex-view" @click="handleDetail(item.id)">
+                <img :src="$img(item.cover)">
+                <h2>{{item.title}}</h2>
+              </div>
+              <div class="pay">¥{{item.price}}</div>
+              <div class="count-readonly">x {{item.count}}</div>
+              <span class="op-link" @click="goCart">修改</span>
+            </div>
+          </template>
         </div>
       </div>
       <div class="title flex-view">
         <h3>备注</h3>
       </div>
-      <textarea :value="remark" placeholder="输入备注信息，100字以内" class="remark">
-    </textarea>
+      <textarea v-model="remark" placeholder="输入备注信息，100字以内" class="remark"></textarea>
     </div>
     <div class="right-flex">
       <div class="title flex-view">
@@ -90,6 +100,7 @@ import AddAddress from '@/views/index/modal/add-address'
 import SelectAddress from '@/views/index/modal/select-address'
 import {createApi} from '@/api/index/order'
 import {listApi as listAddressListApi} from '@/api/index/address'
+import { getItems, getTotalAmount, clearCart } from '@/utils/cart'
 
 export default {
   components: {
@@ -107,20 +118,35 @@ export default {
       receiver_name: undefined,
       receiver_phone: undefined,
       receiver_address: undefined,
-      cover: undefined
+      cover: undefined,
+      fromCart: false,
+      cartItems: []
     }
   },
   mounted () {
-    this.id = this.$route.query.id
-    this.title = this.$route.query.title
-    this.price = this.$route.query.price
-    this.amount = this.price
-    this.cover = this.$route.query.cover
+    this.fromCart = this.$route.query.fromCart === '1' || this.$route.query.fromCart === 1
+    if (this.fromCart) {
+      this.cartItems = getItems()
+      this.amount = getTotalAmount()
+    } else {
+      this.id = this.$route.query.id
+      this.title = this.$route.query.title
+      this.price = this.$route.query.price
+      this.amount = Number(this.price || 0)
+      this.cover = this.$route.query.cover
+    }
     this.listAddressData()
   },
   methods: {
-    onCountChange(value){
-      this.amount = this.price * value
+    onCountChange (value) {
+      if (this.fromCart) return
+      this.amount = Number(this.price || 0) * Number(value || 1)
+    },
+    handleDetail (id) {
+      this.$router.push({name: 'detail', query: {id: id}})
+    },
+    goCart () {
+      this.$router.push({path: '/index/cart'})
     },
     listAddressData () {
       let userId = this.$store.state.user.userId
@@ -196,7 +222,6 @@ export default {
       console.log('back...')
     },
     handleJiesuan () {
-      const formData = new FormData()
       let userId = this.$store.state.user.userId
       if (!userId) {
         this.$message.warn('请先登录！')
@@ -206,19 +231,56 @@ export default {
         this.$message.warn('请选择地址！')
         return
       }
+
+      if (this.fromCart) {
+        const items = getItems()
+        if (!items.length) {
+          this.$message.warn('购物车为空')
+          return
+        }
+        const totalAmount = getTotalAmount()
+        const requests = items.map(it => {
+          const formData = new FormData()
+          formData.append('user', userId)
+          formData.append('thing', it.id)
+          formData.append('count', it.count)
+          if (this.remark) {
+            formData.append('remark', this.remark)
+          }
+          formData.append('receiver_name', this.receiver_name)
+          formData.append('receiver_phone', this.receiver_phone)
+          formData.append('receiver_address', this.receiver_address)
+          return createApi(formData)
+        })
+        Promise.all(requests).then((results) => {
+          const orderIds = (results || [])
+            .map(r => r && r.data && r.data.id)
+            .filter(Boolean)
+            .join(',')
+          clearCart()
+          this.$message.success('请支付订单')
+          this.$router.push({'name': 'pay', query: {'amount': Number(totalAmount).toFixed(2), orderIds}})
+        }).catch(err => {
+          this.$message.error(err.msg || '失败')
+        })
+        return
+      }
+
+      const formData = new FormData()
       formData.append('user', userId)
       formData.append('thing', this.id)
       formData.append('count', this.count)
-      if (this.remark){
+      if (this.remark) {
         formData.append('remark', this.remark)
       }
       formData.append('receiver_name', this.receiver_name)
       formData.append('receiver_phone', this.receiver_phone)
       formData.append('receiver_address', this.receiver_address)
       console.log(formData)
-      createApi(formData).then(res => {
+      createApi(formData).then((res) => {
+        const orderIds = res && res.data && res.data.id ? String(res.data.id) : ''
         this.$message.success('请支付订单')
-        this.$router.push({'name': 'pay', query: {'amount': this.amount}})
+        this.$router.push({'name': 'pay', query: {'amount': Number(this.amount).toFixed(2), orderIds}})
       }).catch(err => {
         this.$message.error(err.msg || '失败')
       })
@@ -367,6 +429,20 @@ export default {
     width: 24px;
     cursor: pointer;
   }
+}
+
+.count-readonly {
+  width: 80px;
+  margin-right: 40px;
+  color: #152844;
+  font-size: 14px;
+}
+
+.op-link {
+  width: 28px;
+  color: #4684e2;
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .mb-24 {

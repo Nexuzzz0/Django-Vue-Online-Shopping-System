@@ -1,10 +1,11 @@
 <template>
   <div style="width: 200px; height: 100%; padding-bottom: 48px; overflow: scroll;">
     <a-menu
-      :default-selected-keys="[this.$route.path]"
-      :default-open-keys="[]"
+      :selected-keys="[$route.path]"
+      :open-keys="openKeys"
       @click="handleMenuClick"
-      theme="dark"
+      @openChange="onOpenChange"
+      theme="light"
       mode="inline"
     >
       <template v-for="item in menuData">
@@ -12,51 +13,28 @@
           <a-icon type="appstore" />
           <span>{{ item.title }}</span>
         </a-menu-item>
-        <sub-menu v-else :key="item.key" :menu-info="item" />
+
+        <a-sub-menu v-else :key="item.key">
+          <span slot="title">
+            <a-icon type="folder" />
+            <span>{{ item.title }}</span>
+          </span>
+          <a-menu-item v-for="child in item.children" :key="child.key">
+            <a-icon type="appstore" />
+            <span>{{ child.title }}</span>
+          </a-menu-item>
+        </a-sub-menu>
       </template>
     </a-menu>
   </div>
 </template>
 
 <script>
-
-// 参考：https://1x.antdv.com/components/menu-cn/#API
-
-import { Menu } from 'ant-design-vue'
-const SubMenu = {
-  template: `
-      <a-sub-menu :key="menuInfo.key" v-bind="$props" v-on="$listeners">
-        <span slot="title">
-          <a-icon type="folder" /><span>{{ menuInfo.title }}</span>
-        </span>
-        <template v-for="item in menuInfo.children">
-          <a-menu-item v-if="!item.children" :key="item.key">
-            <a-icon type="appstore" />
-            <span>{{ item.title }}</span>
-          </a-menu-item>
-          <sub-menu v-else :key="item.key" :menu-info="item" />
-        </template>
-      </a-sub-menu>
-    `,
-  name: 'SubMenu',
-  // must add isSubMenu: true
-  isSubMenu: true,
-  props: {
-    ...Menu.SubMenu.props,
-    // Cannot overlap with properties within Menu.SubMenu.props
-    menuInfo: {
-      type: Object,
-      default: () => ({})
-    }
-  }
-}
 export default {
   name: 'SiderBar',
-  components: {
-    'sub-menu': SubMenu
-  },
   data () {
     return {
+      openKeys: [],
       menuData: [
         {
           key: '/admin/overview',
@@ -87,13 +65,13 @@ export default {
           title: '用户管理'
         },
         {
-          key: '/admin/banner',
+          key: 'operation',
           title: '运营管理',
           children: [
-            // {
-            //   key: '/admin/banner',
-            //   title: '横幅管理'
-            // },
+            {
+              key: '/admin/banner',
+              title: '横幅管理'
+            },
             {
               key: '/admin/ad',
               title: '广告管理'
@@ -105,7 +83,7 @@ export default {
           ]
         },
         {
-          key: '/admin/loginLog',
+          key: 'logs',
           title: '日志管理',
           children: [
             {
@@ -130,6 +108,9 @@ export default {
     }
   },
   methods: {
+    onOpenChange (keys) {
+      this.openKeys = keys
+    },
     handleMenuClick ({ item, key, keyPath }) {
       if (key !== this.$route.path) {
         this.$router.push(key)

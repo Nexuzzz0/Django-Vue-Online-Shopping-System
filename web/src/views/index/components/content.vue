@@ -57,7 +57,9 @@
             <div class="img-view">
               <img :src="item.cover" class="thing-cover" alt="cover" v-img-fallback></div>
             <div class="info-view">
-              <h3 class="thing-name">{{ item.title.substring(0, 12)}}</h3>
+              <a-tooltip :title="item.title" placement="topLeft">
+                <h3 class="thing-name">{{ item.title }}</h3>
+              </a-tooltip>
               <span>
                 <span class="a-price-symbol">¥</span>
                 <span class="a-price">{{item.price}}</span>

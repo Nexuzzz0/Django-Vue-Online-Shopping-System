@@ -26,12 +26,21 @@
         }"
       >
         <span slot="status" slot-scope="text">
-          <a-tag :color="text === '1'? '#2db7f5':'#87d068'">
-            {{text === '1'? '待支付': text === '2'? '已支付':'已取消'}}
+          <a-tag :color="text === '1' ? '#2db7f5' : text === '7' ? '#bfbfbf' : text === '4' ? '#87d068' : '#faad14'">
+            {{ text === '1'
+              ? '待支付'
+              : text === '2'
+                ? '待发货'
+                : text === '3'
+                  ? '待收货'
+                  : text === '4'
+                    ? '已完成'
+                    : '已取消' }}
           </a-tag>
         </span>
         <span slot="operation" class="operation" slot-scope="text, record">
           <a-space :size="16">
+            <a v-if="record.status === '2'" @click="handleShip(record)">发货</a>
             <a @click="handleCancel(record)">取消</a>
             <a @click="handleDelete(record)">删除</a>
           </a-space>
@@ -42,7 +51,7 @@
 </template>
 
 <script>
-import {listApi, createApi, updateApi, cancelOrderApi, delayApi, deleteApi} from '@/api/admin/order'
+import {listApi, createApi, updateApi, cancelOrderApi, delayApi, deleteApi, shipApi} from '@/api/admin/order'
 
 const columns = [
   {
@@ -127,6 +136,21 @@ export default {
         this.getList()
       }).catch(err => {
 
+      })
+    },
+    // 发货
+    handleShip (record) {
+      const that = this
+      this.$confirm({
+        title: '确定发货？',
+        onOk () {
+          shipApi({ id: record.id }).then(() => {
+            that.$message.success('发货成功')
+            that.getList()
+          }).catch(err => {
+            that.$message.error(err.msg || '发货失败')
+          })
+        }
       })
     },
     // 取消

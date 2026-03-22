@@ -15,17 +15,17 @@
       </div>
       <div class="pay-choose-view" style="">
         <div class="pay-choose-box flex-view">
-          <div class="choose-box choose-box-active">
+          <div class="choose-box" :class="{ 'choose-box-active': payType === 'wx' }" @click="selectPay('wx')">
             <img src="@/assets/images/wx-pay-icon.svg">
             <span>微信支付</span>
           </div>
-          <div class="choose-box">
+          <div class="choose-box" :class="{ 'choose-box-active': payType === 'ali' }" @click="selectPay('ali')">
             <img src="@/assets/images/ali-pay-icon.svg">
             <span>支付宝</span>
           </div>
         </div>
         <div class="tips">请选择任意一种支付方式</div>
-        <button class="pay-btn pay-btn-active" @click="handlePay()">确认支付</button>
+        <button class="pay-btn" :class="{ 'pay-btn-active': !!payType }" @click="handlePay()">确认支付</button>
       </div>
       <div class="pay-qr-view" style="display: none;">
         <div class="loading-tip" style="">正在生成安全支付二维码</div>
@@ -46,6 +46,7 @@
 <script>
 import Header from '@/views/index/components/header'
 import Footer from '@/views/index/components/footer'
+import { confirmOrderApi } from '@/api/index/order'
 
 export default {
   components: {
@@ -55,40 +56,95 @@ export default {
   data () {
     return {
       ddlTime: undefined,
-      amount: undefined
+      amount: undefined,
+      payType: 'wx',
+      orderIds: []
     }
   },
   mounted () {
     this.amount = this.$route.query.amount
 
-    this.ddlTime = this.formatDate(new Date().getTime(), 'YY-MM-DD hh:mm:ss')
+    const raw = this.$route.query.orderIds
+    if (raw) {
+      this.orderIds = String(raw)
+        .split(',')
+        .map(s => Number(String(s).trim()))
+        .filter(Boolean)
+    }
+
+    const now = Date.now()
+    const ddl = now + 30 * 60 * 1000
+    this.ddlTime = this.formatDate(ddl, 'YY-MM-DD hh:mm:ss')
 
   },
   methods: {
+    selectPay (type) {
+      this.payType = type
+    },
+    loadPayMethodMap () {
+      try {
+        const raw = localStorage.getItem('demo_shop_pay_method_map_v1') || '{}'
+        const parsed = JSON.parse(raw)
+        return parsed && typeof parsed === 'object' ? parsed : {}
+      } catch (e) {
+        return {}
+      }
+    },
+    savePayMethodMap (map) {
+      try {
+        localStorage.setItem('demo_shop_pay_method_map_v1', JSON.stringify(map || {}))
+      } catch (e) {
+        // ignore
+      }
+    },
     handlePay () {
-      this.$message.success('支付成功')
+      if (!this.payType) {
+        this.$message.warn('请选择支付方式')
+        return
+      }
+      const label = this.payType === 'ali' ? '支付宝' : '微信'
+
+      const afterPaid = () => {
+        if (this.orderIds && this.orderIds.length) {
+          const map = this.loadPayMethodMap()
+          this.orderIds.forEach(id => {
+            map[String(id)] = this.payType
+          })
+          this.savePayMethodMap(map)
+        }
+        this.$message.success(`${label}支付成功`)
+        this.$router.push({ name: 'orderView' })
+      }
+
+      if (!this.orderIds || !this.orderIds.length) {
+        afterPaid()
+        return
+      }
+
+      Promise.all(this.orderIds.map(id => confirmOrderApi({ id })))
+        .then(() => afterPaid())
+        .catch(err => {
+          this.$message.error(err.msg || '支付确认失败')
+        })
     },
     formatDate (time, format = 'YY-MM-DD hh:mm:ss') {
       const date = new Date(time)
 
-      const year = date.getFullYear(),
-        month = date.getMonth() + 1,
-        day = date.getDate() + 1,
-        hour = date.getHours(),
-        min = date.getMinutes(),
-        sec = date.getSeconds()
-      const preArr = Array.apply(null, Array(10)).map(function (elem, index) {
-        return '0' + index
-      })
+      const pad2 = (n) => String(n).padStart(2, '0')
+      const year = date.getFullYear()
+      const month = pad2(date.getMonth() + 1)
+      const day = pad2(date.getDate())
+      const hour = pad2(date.getHours())
+      const min = pad2(date.getMinutes())
+      const sec = pad2(date.getSeconds())
 
-      const newTime = format.replace(/YY/g, year)
-        .replace(/MM/g, preArr[month] || month)
-        .replace(/DD/g, preArr[day] || day)
-        .replace(/hh/g, preArr[hour] || hour)
-        .replace(/mm/g, preArr[min] || min)
-        .replace(/ss/g, preArr[sec] || sec)
-
-      return newTime
+      return format
+        .replace(/YY/g, String(year))
+        .replace(/MM/g, month)
+        .replace(/DD/g, day)
+        .replace(/hh/g, hour)
+        .replace(/mm/g, min)
+        .replace(/ss/g, sec)
     }
   }
 }

@@ -25,14 +25,15 @@
             </a-menu-item>
           </a-menu>
         </a-dropdown>
-<!--        <div class="right-icon">-->
-<!--          <img src="@/assets/cart-icon.svg">-->
-<!--          <span>3</span>-->
-<!--        </div>-->
       </template>
       <template v-else>
         <button class="login btn hidden-sm" @click="goLogin()">登录</button>
       </template>
+
+      <div class="right-icon" @click="$router.push({name: 'cart'})" title="购物车">
+        <img src="@/assets/images/cart-icon.svg">
+        <span v-if="cartCount">{{ cartCount }}</span>
+      </div>
 
       <div class="right-icon" @click="msgVisible=true">
         <img src="@/assets/images/message-icon.svg">
@@ -78,6 +79,7 @@
 
 <script>
 import {listApi} from '@/api/index/notice'
+import { getCount } from '@/utils/cart'
 
 export default {
   name: 'Header',
@@ -85,13 +87,22 @@ export default {
     return {
       loading: false,
       msgVisible: false,
-      msgData: []
+      msgData: [],
+      cartCount: 0
     }
   },
   mounted () {
     this.getMessageList()
+    this.refreshCartCount()
+    window.addEventListener('cart:updated', this.refreshCartCount)
+  },
+  beforeDestroy () {
+    window.removeEventListener('cart:updated', this.refreshCartCount)
   },
   methods: {
+    refreshCartCount () {
+      this.cartCount = getCount()
+    },
     getMessageList () {
       this.loading = true
       listApi().then(res => {

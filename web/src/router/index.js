@@ -48,6 +48,11 @@ const constantRouterMap = [
         component: () => import('@/views/index/confirm')
       },
       {
+        path: 'cart',
+        name: 'cart',
+        component: () => import('@/views/index/cart')
+      },
+      {
         path: 'pay',
         name: 'pay',
         component: () => import('@/views/index/pay')
