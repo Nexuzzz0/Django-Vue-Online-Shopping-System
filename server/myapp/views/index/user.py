@@ -1,5 +1,6 @@
 # Create your views here.
 import datetime
+import re
 
 from rest_framework.decorators import api_view, authentication_classes
 
@@ -9,6 +10,28 @@ from myapp.handler import APIResponse
 from myapp.models import User
 from myapp.serializers import UserSerializer, LoginLogSerializer
 from myapp.utils import md5value
+
+
+def _password_strength(password: str) -> tuple[int, str]:
+    """简单密码强度：返回 (level, label)
+
+    level: 1弱 2中 3强
+    """
+    if not password:
+        return 1, '弱'
+
+    length = len(password)
+    has_lower = bool(re.search(r"[a-z]", password))
+    has_upper = bool(re.search(r"[A-Z]", password))
+    has_digit = bool(re.search(r"\d", password))
+    has_symbol = bool(re.search(r"[^A-Za-z0-9]", password))
+    kinds = sum([has_lower, has_upper, has_digit, has_symbol])
+
+    if length >= 10 and kinds >= 3:
+        return 3, '强'
+    if length >= 8 and kinds >= 2:
+        return 2, '中'
+    return 1, '弱'
 
 
 def make_login_log(request):
@@ -156,3 +179,11 @@ def updatePwd(request):
         print(serializer.errors)
 
     return APIResponse(code=1, msg='更新失败')
+
+
+@api_view(['GET'])
+def pwd_strength(request):
+    """密码复杂度判断接口（用于前端安全等级展示）"""
+    password = request.GET.get('password', '')
+    level, label = _password_strength(password)
+    return APIResponse(code=0, msg='查询成功', data={'level': level, 'label': label})

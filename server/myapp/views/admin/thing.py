@@ -15,20 +15,49 @@ def list_api(request):
         keyword = request.GET.get("keyword", None)
         c = request.GET.get("c", None)
         tag = request.GET.get("tag", None)
+        page = request.GET.get('page', None)
+        pageSize = request.GET.get('pageSize', None)
+
+        try:
+            page_int = int(page) if page is not None else None
+            page_size_int = int(pageSize) if pageSize is not None else None
+        except Exception:
+            return APIResponse(code=1, msg='分页参数错误')
+
         if keyword:
             things = Thing.objects.filter(title__contains=keyword).order_by('-create_time')
         elif c:
             classification = Classification.objects.get(pk=c)
-            things = classification.classification_thing.all()
+            things = classification.classification_thing.all().order_by('-create_time')
         elif tag:
             tag = Tag.objects.get(id=tag)
             print(tag)
-            things = tag.thing_set.all()
+            things = tag.thing_set.all().order_by('-create_time')
         else:
             things = Thing.objects.all().order_by('-create_time')
 
-        serializer = ThingSerializer(things, many=True)
-        return APIResponse(code=0, msg='查询成功', data=serializer.data)
+        total = things.count()
+        # 兼容：不传分页参数时，保持老的返回结构（list）
+        if page_int is None or page_size_int is None:
+            serializer = ThingSerializer(things, many=True)
+            return APIResponse(code=0, msg='查询成功', data=serializer.data)
+
+        if page_int < 1:
+            page_int = 1
+        if page_size_int < 1:
+            page_size_int = 10
+        if page_size_int > 100:
+            page_size_int = 100
+
+        start = (page_int - 1) * page_size_int
+        end = start + page_size_int
+        serializer = ThingSerializer(things[start:end], many=True)
+        return APIResponse(code=0, msg='查询成功', data={
+            'list': serializer.data,
+            'total': total,
+            'page': page_int,
+            'pageSize': page_size_int,
+        })
 
 
 @api_view(['GET'])

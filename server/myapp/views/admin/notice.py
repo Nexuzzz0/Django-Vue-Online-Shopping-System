@@ -11,9 +11,38 @@ from myapp.serializers import NoticeSerializer
 @api_view(['GET'])
 def list_api(request):
     if request.method == 'GET':
+        page = request.GET.get('page', None)
+        pageSize = request.GET.get('pageSize', None)
+        try:
+            page_int = int(page) if page is not None else None
+            page_size_int = int(pageSize) if pageSize is not None else None
+        except Exception:
+            return APIResponse(code=1, msg='分页参数错误')
+
         notices = Notice.objects.all().order_by('-create_time')
-        serializer = NoticeSerializer(notices, many=True)
-        return APIResponse(code=0, msg='查询成功', data=serializer.data)
+        total = notices.count()
+
+        # 兼容：不传分页参数时，保持老的返回结构（list）
+        if page_int is None or page_size_int is None:
+            serializer = NoticeSerializer(notices, many=True)
+            return APIResponse(code=0, msg='查询成功', data=serializer.data)
+
+        if page_int < 1:
+            page_int = 1
+        if page_size_int < 1:
+            page_size_int = 10
+        if page_size_int > 100:
+            page_size_int = 100
+
+        start = (page_int - 1) * page_size_int
+        end = start + page_size_int
+        serializer = NoticeSerializer(notices[start:end], many=True)
+        return APIResponse(code=0, msg='查询成功', data={
+            'list': serializer.data,
+            'total': total,
+            'page': page_int,
+            'pageSize': page_size_int,
+        })
 
 
 @api_view(['POST'])

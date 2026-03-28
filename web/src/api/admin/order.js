@@ -10,7 +10,9 @@ const api = {
   deleteApi: '/myapp/admin/order/delete',
   updateApi: '/myapp/admin/order/update',
   delayApi: '/myapp/admin/order/delay',
-  shipApi: '/myapp/admin/order/ship'
+  shipApi: '/myapp/admin/order/ship',
+  refundApproveApi: '/myapp/admin/order/refund_approve',
+  refundRejectApi: '/myapp/admin/order/refund_reject'
 }
 
 /**
@@ -93,6 +95,28 @@ export const delayApi = function (params, data) {
 export const shipApi = function (params) {
   return axios({
     url: api.shipApi,
+    method: 'post',
+    headers: {
+      'Content-Type': 'multipart/form-data;charset=utf-8'
+    },
+    params: params
+  })
+}
+
+export const refundApproveApi = function (params) {
+  return axios({
+    url: api.refundApproveApi,
+    method: 'post',
+    headers: {
+      'Content-Type': 'multipart/form-data;charset=utf-8'
+    },
+    params: params
+  })
+}
+
+export const refundRejectApi = function (params) {
+  return axios({
+    url: api.refundRejectApi,
     method: 'post',
     headers: {
       'Content-Type': 'multipart/form-data;charset=utf-8'

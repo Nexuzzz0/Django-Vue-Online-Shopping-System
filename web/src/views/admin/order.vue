@@ -15,18 +15,11 @@
         :data-source="data"
         :scroll="{ x: 'max-content' }"
         :row-selection="rowSelection()"
-        :pagination="{
-          size: 'default',
-          current: page,
-          pageSize: pageSize,
-          onChange: (current) => page = current,
-          pageSizeOptions: ['10', '20', '30', '40'],
-          showSizeChanger: true,
-          showTotal: (total) => `共${total}条数据`
-        }"
+        :pagination="pagination"
+        @change="handleTableChange"
       >
         <span slot="status" slot-scope="text">
-          <a-tag :color="text === '1' ? '#2db7f5' : text === '7' ? '#bfbfbf' : text === '4' ? '#87d068' : '#faad14'">
+          <a-tag :color="text === '1' ? '#2db7f5' : text === '7' ? '#bfbfbf' : text === '4' ? '#87d068' : text === '6' ? '#b37feb' : text === '5' ? '#ff7875' : '#faad14'">
             {{ text === '1'
               ? '待支付'
               : text === '2'
@@ -35,12 +28,18 @@
                   ? '待收货'
                   : text === '4'
                     ? '已完成'
+                    : text === '5'
+                      ? '退款中'
+                      : text === '6'
+                        ? '已退款'
                     : '已取消' }}
           </a-tag>
         </span>
         <span slot="operation" class="operation" slot-scope="text, record">
           <a-space :size="16">
             <a v-if="record.status === '2'" @click="handleShip(record)">发货</a>
+            <a v-if="record.status === '5'" @click="handleRefundApprove(record)">同意退款</a>
+            <a v-if="record.status === '5'" @click="handleRefundReject(record)">拒绝退款</a>
             <a @click="handleCancel(record)">取消</a>
             <a @click="handleDelete(record)">删除</a>
           </a-space>
@@ -51,7 +50,17 @@
 </template>
 
 <script>
-import {listApi, createApi, updateApi, cancelOrderApi, delayApi, deleteApi, shipApi} from '@/api/admin/order'
+import {
+  listApi,
+  createApi,
+  updateApi,
+  cancelOrderApi,
+  delayApi,
+  deleteApi,
+  shipApi,
+  refundApproveApi,
+  refundRejectApi
+} from '@/api/admin/order'
 
 const columns = [
   {
@@ -105,19 +114,48 @@ export default {
       columns,
       data: [],
       pageSize: 10,
-      page: 1
+      page: 1,
+      total: 0,
+      pagination: {
+        size: 'default',
+        current: 1,
+        pageSize: 10,
+        total: 0,
+        pageSizeOptions: ['10', '20', '30', '40'],
+        showSizeChanger: true,
+        showTotal: (total) => `共${total}条数据`
+      }
     }
   },
   methods: {
+    handleTableChange (pagination) {
+      const nextPage = pagination && pagination.current ? pagination.current : 1
+      const nextSize = pagination && pagination.pageSize ? pagination.pageSize : 10
+      this.page = nextPage
+      this.pageSize = nextSize
+      this.pagination.current = nextPage
+      this.pagination.pageSize = nextSize
+      this.getList()
+    },
     getList () {
       this.loading = true
-      listApi().then(res => {
+      listApi({
+        page: this.page,
+        pageSize: this.pageSize
+      }).then(res => {
         this.loading = false
-        res.data.forEach((item, index) => {
-          item.index = index + 1
+        const payload = res.data
+        const list = Array.isArray(payload) ? payload : (payload && payload.list ? payload.list : [])
+        const total = Array.isArray(payload) ? list.length : (payload && payload.total ? payload.total : 0)
+        this.total = total
+        this.pagination.total = total
+        this.pagination.current = this.page
+        this.pagination.pageSize = this.pageSize
+
+        list.forEach((item, index) => {
+          item.index = (this.page - 1) * this.pageSize + index + 1
         })
-        this.data = res.data
-        console.log(res)
+        this.data = list
       })
     },
     rowSelection () {
@@ -149,6 +187,36 @@ export default {
             that.getList()
           }).catch(err => {
             that.$message.error(err.msg || '发货失败')
+          })
+        }
+      })
+    },
+    // 同意退款
+    handleRefundApprove (record) {
+      const that = this
+      this.$confirm({
+        title: '确定同意退款？',
+        onOk () {
+          refundApproveApi({ id: record.id }).then(() => {
+            that.$message.success('退款成功')
+            that.getList()
+          }).catch(err => {
+            that.$message.error(err.msg || '退款失败')
+          })
+        }
+      })
+    },
+    // 拒绝退款
+    handleRefundReject (record) {
+      const that = this
+      this.$confirm({
+        title: '确定拒绝退款？',
+        onOk () {
+          refundRejectApi({ id: record.id }).then(() => {
+            that.$message.success('已拒绝退款')
+            that.getList()
+          }).catch(err => {
+            that.$message.error(err.msg || '操作失败')
           })
         }
       })

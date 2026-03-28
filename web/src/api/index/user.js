@@ -9,6 +9,7 @@ const api = {
   infoApi: '/myapp/index/user/info',
   updateApi: '/myapp/index/user/update',
   updatePwdApi: '/myapp/index/user/updatePwd',
+  pwdStrengthApi: '/myapp/index/user/pwd_strength'
 }
 
 export const registerApi = function (data) {
@@ -56,5 +57,13 @@ export const updatePwdApi = function (params, data) {
     },
     params: params,
     data: data
+  })
+}
+
+export const pwdStrengthApi = function (params) {
+  return axios({
+    url: api.pwdStrengthApi,
+    method: 'get',
+    params: params
   })
 }

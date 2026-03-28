@@ -28,11 +28,11 @@
                   <span>库存：</span>
                   <span class="name">{{ detailData.repertory }}</span>
                 </div>
-                <button class="buy-btn" @click="handleOrder(detailData)">
+                <button class="buy-btn" :disabled="isOutOfStock" @click="handleOrder(detailData)">
                   <img src="@/assets/images/add.svg" />
-                  <span>立即购买</span>
+                  <span>{{ isOutOfStock ? '已售罄' : '立即购买' }}</span>
                 </button>
-                <button class="buy-btn buy-btn-secondary" @click="addToCart(detailData)">
+                <button class="buy-btn buy-btn-secondary" :disabled="isOutOfStock" @click="addToCart(detailData)">
                   <img src="@/assets/images/cart-icon.svg" />
                   <span>加入购物车</span>
                 </button>
@@ -188,6 +188,11 @@ export default {
     Footer,
     Header
   },
+  computed: {
+    isOutOfStock () {
+      return Number(this.detailData && this.detailData.repertory ? this.detailData.repertory : 0) <= 0
+    }
+  },
   data () {
     return {
       thingId: '',
@@ -209,6 +214,10 @@ export default {
   },
   methods: {
     addToCart (detailData) {
+      if (this.isOutOfStock) {
+        this.$message.warning('库存不足，暂时无法加入购物车')
+        return
+      }
       addItem({
         id: detailData.id,
         title: detailData.title,
@@ -266,6 +275,10 @@ export default {
     },
     handleOrder (detailData) {
       console.log(detailData)
+      if (this.isOutOfStock) {
+        this.$message.warning('库存不足，暂时无法购买')
+        return
+      }
       const userId = this.$store.state.user.userId
       this.$router.push({name: 'confirm',
         query:

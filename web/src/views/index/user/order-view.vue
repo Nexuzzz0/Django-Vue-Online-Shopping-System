@@ -40,6 +40,16 @@
             >去支付</a-button>
 
             <a-popconfirm
+              v-if="item.status==='2' || item.status==='3'"
+              title="确定申请退款？"
+              ok-text="是"
+              cancel-text="否"
+              @confirm="handleRefundApply(item)"
+            >
+              <a-button size="small" style="margin-right: 12px;">申请退款</a-button>
+            </a-popconfirm>
+
+            <a-popconfirm
               v-if="item.status==='3'"
               title="确认已收到货？"
               ok-text="是"
@@ -106,25 +116,47 @@
 import {listApi} from '@/api/index/order'
 import {cancelOrderApi} from '@/api/index/order'
 import {completeOrderApi} from '@/api/index/order'
+import {refundApplyApi} from '@/api/index/order'
 
 export default {
   name: 'OrderView',
   data () {
     return {
       orderData: ['', '', ''],
-      orderStatus: ''
+      orderStatus: '',
+      _lastAutoRefreshAt: 0
     }
   },
   mounted () {
     this.getOrderList()
+    // 演示场景：从后台切回前台时自动刷新一次订单状态
+    this._onWindowFocus = () => this.autoRefreshOnReturn()
+    this._onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') this.autoRefreshOnReturn()
+    }
+    window.addEventListener('focus', this._onWindowFocus)
+    document.addEventListener('visibilitychange', this._onVisibilityChange)
+  },
+  beforeDestroy () {
+    if (this._onWindowFocus) window.removeEventListener('focus', this._onWindowFocus)
+    if (this._onVisibilityChange) document.removeEventListener('visibilitychange', this._onVisibilityChange)
   },
   methods: {
+    autoRefreshOnReturn () {
+      const now = Date.now()
+      // 防抖：避免频繁触发请求
+      if (now - this._lastAutoRefreshAt < 1500) return
+      this._lastAutoRefreshAt = now
+      this.getOrderList()
+    },
     statusText (s) {
       const v = String(s)
       if (v === '1') return '待支付'
       if (v === '2') return '待发货'
       if (v === '3') return '待收货'
       if (v === '4') return '已完成'
+      if (v === '5') return '退款中'
+      if (v === '6') return '已退款'
       if (v === '7') return '已取消'
       return '未知'
     },
@@ -198,6 +230,14 @@ export default {
         this.getOrderList()
       }).catch(err => {
         this.$message.error(err.msg || '确认收货失败')
+      })
+    },
+    handleRefundApply (item) {
+      refundApplyApi({ id: item.id }).then(() => {
+        this.$message.success('已提交退款申请')
+        this.getOrderList()
+      }).catch(err => {
+        this.$message.error(err.msg || '申请退款失败')
       })
     }
   }

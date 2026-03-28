@@ -16,15 +16,8 @@
           :data-source="data"
           :scroll="{ x: 'max-content' }"
           :row-selection="rowSelection()"
-          :pagination="{
-          size: 'default',
-          current: page,
-          pageSize: pageSize,
-          onChange: (current) => page = current,
-          pageSizeOptions: ['10', '20', '30', '40'],
-          showSizeChanger: true,
-          showTotal: (total) => `共${total}条数据`
-        }"
+          :pagination="pagination"
+          @change="handleTableChange"
         >
           <span slot="operation" class="operation" slot-scope="text, record">
           <a-space :size="16">
@@ -80,22 +73,51 @@ export default {
       columns,
       data: [],
       pageSize: 10,
-      page: 1
+      page: 1,
+      total: 0,
+      pagination: {
+        size: 'default',
+        current: 1,
+        pageSize: 10,
+        total: 0,
+        pageSizeOptions: ['10', '20', '30', '40'],
+        showSizeChanger: true,
+        showTotal: (total) => `共${total}条数据`
+      }
     }
   },
   methods: {
+    handleTableChange (pagination) {
+      const nextPage = pagination && pagination.current ? pagination.current : 1
+      const nextSize = pagination && pagination.pageSize ? pagination.pageSize : 10
+      this.page = nextPage
+      this.pageSize = nextSize
+      this.pagination.current = nextPage
+      this.pagination.pageSize = nextSize
+      this.getList()
+    },
     getList () {
       this.loading = true
-      listApi().then(res => {
+      listApi({
+        page: this.page,
+        pageSize: this.pageSize
+      }).then(res => {
         this.loading = false
-        res.data.forEach((item, index) => {
-          item.index = index + 1
+        const payload = res.data
+        const list = Array.isArray(payload) ? payload : (payload && payload.list ? payload.list : [])
+        const total = Array.isArray(payload) ? list.length : (payload && payload.total ? payload.total : 0)
+        this.total = total
+        this.pagination.total = total
+        this.pagination.current = this.page
+        this.pagination.pageSize = this.pageSize
+
+        list.forEach((item, index) => {
+          item.index = (this.page - 1) * this.pageSize + index + 1
           if (item.image) {
             item.image = this.$BASE_URL + item.image
           }
         })
-        this.data = res.data
-        console.log(res)
+        this.data = list
       })
     },
     rowSelection () {
@@ -112,6 +134,7 @@ export default {
           on: {
             ok: () => {
               this.page = 1
+              this.pagination.current = 1
               this.getList()
             }
           }

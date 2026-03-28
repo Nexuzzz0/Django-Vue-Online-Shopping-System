@@ -24,7 +24,8 @@ def list_api(request):
         elif sort == 'hot':
             order = '-pv'
         elif sort == 'recommend':
-            order = 'wish_count'
+            # 推荐：按心愿单人数从大到小
+            order = '-wish_count'
 
         if keyword:
             things = Thing.objects.filter(status='0', title__contains=keyword).order_by(order)

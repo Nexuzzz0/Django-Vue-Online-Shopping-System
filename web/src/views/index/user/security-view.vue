@@ -7,8 +7,8 @@
           <div class="item flex-view">
             <div class="label">账号安全等级</div>
             <div class="right-box flex-center flex-view">
-              <div class="safe-text">低风险</div>
-              <progress max="3" class="safe-line" value="2">
+              <div class="safe-text">{{ strengthText }}</div>
+              <progress max="3" class="safe-line" :value="strengthLevel">
               </progress>
             </div>
           </div>
@@ -56,7 +56,8 @@
 </template>
 
 <script>
-import {updatePwdApi} from '@/api/index/user'
+import { updatePwdApi, pwdStrengthApi } from '@/api/index/user'
+import { mapActions } from 'vuex'
 
 export default  {
   name: 'SecurityView',
@@ -64,10 +65,36 @@ export default  {
     return {
       password: undefined,
       newPassword1: undefined,
-      newPassword2: undefined
+      newPassword2: undefined,
+      strengthLevel: 2,
+      strengthText: '中'
+    }
+  },
+  watch: {
+    newPassword1: {
+      immediate: true,
+      handler (val) {
+        // 空值时回到默认展示
+        if (!val) {
+          this.strengthLevel = 2
+          this.strengthText = '中'
+          return
+        }
+        pwdStrengthApi({ password: val }).then(res => {
+          const level = (res && res.data && res.data.level) || 1
+          const label = (res && res.data && res.data.label) || '弱'
+          this.strengthLevel = Math.max(1, Math.min(3, Number(level) || 1))
+          this.strengthText = label
+        }).catch(() => {
+          // 接口失败不阻断流程
+          this.strengthLevel = 1
+          this.strengthText = '弱'
+        })
+      }
     }
   },
   methods: {
+    ...mapActions(['Logout']),
     handleBindMobile () {
       this.$message.info('功能开发中')
     },
@@ -88,6 +115,10 @@ export default  {
         newPassword2: this.newPassword2
       }).then(res => {
         this.$message.success('修改成功')
+        // 论文第5章：修改成功后跳转登录页并要求重新登录
+        this.Logout().finally(() => {
+          this.$router.replace({ name: 'login' })
+        })
       }).catch(err => {
         this.$message.error(err.msg)
       })

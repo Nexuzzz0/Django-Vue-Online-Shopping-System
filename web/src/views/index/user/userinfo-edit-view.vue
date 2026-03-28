@@ -31,7 +31,7 @@
         <div class="item flex-view">
           <div class="label">手机号</div>
           <div class="right-box">
-            <input type="text" v-model="form.mobile" placeholder="请输入邮箱" maxlength="100" class="input-dom web-input">
+            <input type="text" v-model="form.mobile" placeholder="请输入手机号" maxlength="11" class="input-dom web-input">
           </div>
         </div>
         <div class="item flex-view">
@@ -100,6 +100,13 @@ export default {
       })
     },
     submit () {
+      if (this.form.mobile) {
+        const mobile = String(this.form.mobile).trim()
+        if (!/^\d{11}$/.test(mobile)) {
+          this.$message.warn('手机号需为11位数字')
+          return
+        }
+      }
       let userId = this.$store.state.user.userId
 
       const formData = new FormData()
@@ -113,7 +120,7 @@ export default {
         formData.append('email', this.form.email)
       }
       if (this.form.mobile) {
-        formData.append('mobile', this.form.mobile)
+        formData.append('mobile', String(this.form.mobile).trim())
       }
       if (this.form.description) {
         formData.append('description', this.form.description)

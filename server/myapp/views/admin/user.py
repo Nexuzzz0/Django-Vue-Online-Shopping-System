@@ -34,7 +34,8 @@ def admin_login(request):
     username = request.data['username']
     password = utils.md5value(request.data['password'])
 
-    users = User.objects.filter(username=username, password=password, role__in=['1', '3'])
+    # 论文第5章：role=0 为管理员。为兼容历史数据，这里同时允许旧角色编码。
+    users = User.objects.filter(username=username, password=password, role__in=['0', '1', '3'])
     if len(users) > 0:
         user = users[0]
         data = {

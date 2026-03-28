@@ -9,7 +9,8 @@ const api = {
   cancelOrderApi: '/myapp/index/order/cancel_order',
   delayApi: '/myapp/index/order/delay',
   confirmApi: '/myapp/index/order/confirm',
-  completeApi: '/myapp/index/order/complete'
+  completeApi: '/myapp/index/order/complete',
+  refundApplyApi: '/myapp/index/order/refund_apply'
 }
 
 /**
@@ -65,6 +66,17 @@ export const confirmOrderApi = function (params) {
 export const completeOrderApi = function (params) {
   return axios({
     url: api.completeApi,
+    method: 'post',
+    headers: {
+      'Content-Type': 'multipart/form-data;charset=utf-8'
+    },
+    params: params,
+  })
+}
+
+export const refundApplyApi = function (params) {
+  return axios({
+    url: api.refundApplyApi,
     method: 'post',
     headers: {
       'Content-Type': 'multipart/form-data;charset=utf-8'
