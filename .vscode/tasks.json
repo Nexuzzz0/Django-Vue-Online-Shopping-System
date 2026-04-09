@@ -1,0 +1,75 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Dev: Backend (Django @9003)",
+      "type": "shell",
+      "command": "pixi run run",
+      "options": {
+        "cwd": "${workspaceFolder}/server"
+      },
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": false
+      },
+      "problemMatcher": {
+        "owner": "django",
+        "pattern": [
+          {
+            "regexp": "^(.*)$",
+            "message": 1
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Performing system checks|Watching for file changes|System check identified",
+          "endsPattern": "Starting development server at|Quit the server with"
+        }
+      }
+    },
+    {
+      "label": "Dev: Frontend (Vue @8082)",
+      "type": "shell",
+      "command": "yarn",
+      "args": [
+        "serve",
+        "--port",
+        "8082"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/web"
+      },
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": false
+      },
+      "problemMatcher": {
+        "owner": "vue",
+        "pattern": [
+          {
+            "regexp": "^(.*)$",
+            "message": 1
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting development server|DONE",
+          "endsPattern": "App running at:|Local:|Network:"
+        }
+      }
+    },
+    {
+      "label": "Dev: All (Backend+Frontend)",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "Dev: Backend (Django @9003)",
+        "Dev: Frontend (Vue @8082)"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
