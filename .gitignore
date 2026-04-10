@@ -1,0 +1,39 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Editor settings
+.idea/
+.vscode/*
+!.vscode/
+!.vscode/tasks.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.sqlite3
+
+# Node
+node_modules/
+dist/
+
+# Local env files
+.env
+.env.*

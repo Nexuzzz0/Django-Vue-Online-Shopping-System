@@ -1,7 +1,33 @@
 
-# pixi environments
-.pixi
-*.egg-info
-# pixi environments
+# Pixi environments
 .pixi/*
+!.pixi/
 !.pixi/config.toml
+
+# Python packaging
+*.egg-info
+
+# Local IDE settings
+.idea/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+
+# Local environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Test and type-check caches
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Local databases
+*.sqlite3
